@@ -117,3 +117,26 @@ class LogisticRegression:
         """
         probabilities = self.predict_proba(X)
         return (probabilities >= threshold).astype(int)
+
+
+class MultinomialNaiveBayes:
+    def fit(self, X, y):
+        self.n_classes = np.unique(y).shape[0]
+        self.n_features = X.shape[1]
+        self.class_priors = np.zeros(self.n_classes, dtype=np.float64)
+        self.feature_probs = np.zeros((self.n_classes, self.n_features), dtype=np.float64)
+
+        for c in range(self.n_classes):
+            X_c = X[y == c]
+            self.class_priors[c] = X_c.shape[0] / float(X.shape[0])
+            self.feature_probs[c, :] = (X_c.sum(axis=0) + 1) / (X_c.sum() + self.n_features)
+
+    def predict(self, X):
+        return np.array([self._predict(x) for x in X])
+
+    def _predict(self, x):
+        class_probabilities = []
+        for c in range(self.n_classes):
+            class_probability = np.log(self.class_priors[c]) + np.sum(np.log(self.feature_probs[c, :]) * x)
+            class_probabilities.append(class_probability)
+        return np.argmax(class_probabilities)

@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import minimize
+from sklearn.tree import DecisionTreeClassifier
 
 class LogisticRegression:
     def __init__(self, fit_intercept=True):
@@ -140,3 +141,29 @@ class MultinomialNaiveBayes:
             class_probability = np.log(self.class_priors[c]) + np.sum(np.log(self.feature_probs[c, :]) * x)
             class_probabilities.append(class_probability)
         return np.argmax(class_probabilities)
+
+class RandomForestClassifier:
+    def __init__(self, n_trees=100, max_depth=None, random_state=None):
+        self.n_trees = n_trees
+        self.max_depth = max_depth
+        self.random_state = random_state
+        self.trees = []
+        self.pool = None
+
+    def fit(self, X, y):
+        np.random.seed(self.random_state)
+
+        for _ in range(self.n_trees):
+            # Train a decision tree on the random subset
+            tree = DecisionTreeClassifier(max_depth=self.max_depth)
+            tree.fit(X, y)
+            # Append the trained tree to the ensemble
+            self.trees.append(tree)
+
+    def predict(self, X):
+        # Make predictions using each tree and take a majority vote
+        predictions = np.array([tree.predict(X) for tree in self.trees])
+        # Use the mode function to get the most common prediction for each instance
+        ensemble_predictions = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=predictions)
+
+        return ensemble_predictions

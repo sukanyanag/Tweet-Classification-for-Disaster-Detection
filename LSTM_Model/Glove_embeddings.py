@@ -83,20 +83,3 @@ class GloveVectorizer:
             return np.array([self.vectorize_text(text) for text in data])
         else:
             raise ValueError("Unsupported data type. Please provide a pandas Series or a list.")
-
-# # Example usage:
-# # Assuming df is your DataFrame and 'text_column' is the column you want to process
-# glove_file_path = '/content/drive/MyDrive/glove.twitter.27B.100d.txt'
-# vectorizer = GloveVectorizer(glove_file_path)
-
-# # Example DataFrame
-# data_series = pd.Series(["Your text goes here.", "Another example text."])
-# data_list = ["Yet another text.", "And one more example."]
-
-# # Vectorize Series
-# resulting_array_series = vectorizer.vectorize_data(data_series)
-# print(resulting_array_series.shape)
-
-# # Vectorize List
-# resulting_array_list = vectorizer.vectorize_data(data_list)
-# print(resulting_array_list.shape)

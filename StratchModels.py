@@ -1,6 +1,43 @@
 import numpy as np
-from scipy.optimize import minimize
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+
+
+## Cusomt Cross Validation
+class CustomCrossValidator:
+    def __init__(self, model, cv=5):
+        self.model = model
+        self.cv = cv
+        self.scores = {'accuracy':[], 'precision':[], 'recall':[], 'f1': []}
+
+    def fit_and_evaluate(self, X, target):
+        if type(target) != 'numpy.ndarray':
+            target = np.array(target)
+
+        skf = StratifiedKFold(n_splits=self.cv)
+        for fold, (train, test) in enumerate(skf.split(X, target)):
+            self.model.fit(X[train], target[train])
+
+            # Predict on the validation set
+            y_pred = self.model.predict(X[test])
+
+            # Calculate the specified scoring metric
+            self.scores['accuracy'].append(accuracy_score(target[test], y_pred))
+            self.scores['precision'].append(precision_score(target[test], y_pred))
+            self.scores['recall'].append(recall_score(target[test], y_pred))
+            self.scores['f1'].append(f1_score(target[test], y_pred))
+
+        self.print_average_scores()
+        return self.scores
+
+    def print_average_scores(self):
+        print('avg accuracy: ', np.mean(self.scores['accuracy']))
+        print('avg precision: ', np.mean(self.scores['precision']))
+        print('avg recall: ', np.mean(self.scores['recall']))
+        print('avg f1: ', np.mean(self.scores['f1']))
+
 
 
 ## Logistic Regression 

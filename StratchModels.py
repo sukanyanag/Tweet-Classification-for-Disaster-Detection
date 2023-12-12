@@ -184,20 +184,19 @@ class DecisionTree:
         node_id = self.size
         self.size += 1
         self._set_defaults(node_id, Y)
-        if self.impurities[node_id] == 0: # only one class in this node
+        if self.impurities[node_id] == 0: 
             return
     	
-        # random shuffling removes any bias due to the feature order
         features = self.RandomState.permutation(self.n_features)[:self.n_features_split]
-    
-        # make the split
+
+	#splting 
         best_score = float('inf')
         for i in features:
             best_score = self._find_bettersplit(i, X, Y, node_id, best_score)
         if best_score == float('inf'): # a split was not made
             return 
     
-        # make children
+        # children
         if depth < self.max_depth_: 
             x_split = X.values[:, self.split_features[node_id]]
             lhs = np.nonzero(x_split<=self.split_values[node_id])
@@ -213,11 +212,9 @@ class DecisionTree:
         X = X.values[:, var_idx] 
         n_samples = self.n_samples[node_id]
     
-        # sort the variables.
         order = np.argsort(X)
         X_sort, Y_sort = X[order], Y[order, :]
     
-        # Start with all on the right. Then move one sample to the left one at a time
         rhs_count = Y.sum(axis=0)
         lhs_count = np.zeros(rhs_count.shape)
         for i in range(0, n_samples-1):
@@ -227,7 +224,7 @@ class DecisionTree:
                 continue
             if sum(rhs_count) < self.min_samples_leaf:
                 break
-            # Gini Impurity
+		    
             curr_score = (self.gini_score(lhs_count) * sum(lhs_count) + self.gini_score(rhs_count) * sum(rhs_count))/n_samples
             if curr_score < best_score:
                 best_score = curr_score
@@ -312,11 +309,7 @@ def parallel_run_decision_tree(X, Y, max_depth=None, max_features=None, min_samp
         executor.submit(parallel_fit, decision_tree, X, Y)
 
     return decision_tree
-
-import numpy as np
-import pandas as pd
-import warnings
-
+	
 
 def check_RandomState(random_state):
     """ Parse different input types for the random state"""
@@ -346,9 +339,8 @@ class RandomForestClassifier:
         self.bootstrap = bootstrap
         self.oob_score = oob_score
 
-    
-    def encode_one_hot(self, data): # note: pd.get_dummies(df) does the same
-        # https://www.kite.com/python/answers/how-to-do-one-hot-encoding-with-numpy-in-python
+    # https://www.kite.com/python/answers/how-to-do-one-hot-encoding-with-numpy-in-python(code reference)
+    def encode_one_hot(self, data): 
         one_hot = np.zeros((data.size, data.max()+1))
         rows = np.arange(data.size)
         one_hot[rows, data] = 1
@@ -357,9 +349,8 @@ class RandomForestClassifier:
     
     def fit(self, X, Y):
         if Y.ndim == 1:
-            Y = self.encode_one_hot(Y) # one-hot encoded y variable
+            Y = self.encode_one_hot(Y) 
     
-        # set internal variables
         self.n_features = X.shape[1]
         self.n_classes = Y.shape[1]
         self.features = X.columns
@@ -376,7 +367,6 @@ class RandomForestClassifier:
         results = Parallel(n_jobs=-1)(
             delayed(self._create_tree)(X, Y, i) for i in range(self.n_trees))
 
-        # unpack the results
         self.trees, rng_states = zip(*results)      
     
         # set attributes
@@ -391,7 +381,6 @@ class RandomForestClassifier:
         assert len(X) == len(Y), ""
         n_samples = X.shape[0]
     
-        # get sub-sample 
         if self.bootstrap: # sample with replacement
             rand_idxs = self.RandomState.randint(0, n_samples, self.sample_size_) 
             # X_, Y_ = X.iloc[rand_idxs, :], Y[rand_idxs] #
@@ -442,12 +431,11 @@ class RandomForestClassifier:
             row_oob = np.setxor1d(np.arange(n_samples), rand_idxs)
             oob_prob[row_oob, :] += self.trees[i].predict_prob(X.iloc[row_oob])
             oob_count[row_oob] += 1
-        # remove nan-values: these samples were never out-of-bag. Highly unlikely for n>6
+        
         valid = oob_count > 0 
         oob_prob = oob_prob[valid, :]
         oob_count = oob_count[valid][:, np.newaxis] # transform to column vector for broadcasting during the division
         y_test    =  np.argmax(Y[valid], axis=1)
-        # predict out-of-bag score
         y_pred = np.argmax(oob_prob/oob_count, axis=1)
         return np.mean(y_pred==y_test)
 
